@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Amerika Quiz</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2f, #2a2a40);
+            color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            position: relative;
+        }
+        /* Menü-Button oben rechts */
+        .menu-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #2a2a40;
+            border: 2px solid #4a4e69;
+            border-radius: 8px;
+            padding: 6px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 38px;
+            width: 38px;
+            box-sizing: border-box;
+            z-index: 10;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .menu-btn:hover {
+            transform: scale(1.05);
+            background: #3b3b58;
+        }
+        .menu-btn img {
+            width: 22px;
+            height: 22px;
+            filter: invert(1);
+        }
+
+        /* Modal / Overlay */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+        .modal-content {
+            background: #22223b;
+            color: #f4f4f9;
+            padding: 30px;
+            border-radius: 15px;
+            width: 580px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid #4a4e69;
+            position: relative;
+            text-align: center;
+        }
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: none;
+            background: #4a4e69;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .close-btn:hover {
+            background: #ff6b6b;
+        }
+
+        /* Menü-Styling (Anleitung & Steuerung) */
+        .menu-section {
+            background: #1a1a2e;
+            border-left: 4px solid #00f2fe;
+            padding: 12px 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+            text-align: left;
+        }
+        .menu-section h4 {
+            margin: 0 0 8px 0;
+            color: #00f2fe;
+            font-size: 1.05em;
+        }
+        .menu-section p, .menu-section ul {
+            margin: 0;
+            font-size: 0.9em;
+            color: #c9d1d9;
+            padding-left: 15px;
+        }
+        .menu-section li {
+            margin-bottom: 4px;
+        }
+        .key-badge {
+            background: #333842;
+            border: 1px solid #5a6072;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #00f2fe;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #3a3f58;
+            padding: 8px 10px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        th {
+            background-color: #2a2e43;
+            color: #00f2fe;
+        }
+
+        .main-layout {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            max-width: 1300px;
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            justify-content: center;
+        }
+        .sidebar {
+            background: #22223b;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 1px solid #3a3f58;
+            width: 220px;
+            box-sizing: border-box;
+        }
+        .sidebar h3 {
+            margin-top: 0;
+            font-size: 1.1em;
+            text-align: center;
+            border-bottom: 2px solid #3a3f58;
+            padding-bottom: 8px;
+        }
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.9em;
+        }
+        .sidebar li {
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        #wrong-list li { color: #ff6b6b; }
+        #correct-list li { color: #51cf66; }
+
+        .quiz-container {
+            background: #22223b;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 1px solid #3a3f58;
+            text-align: center;
+            flex-grow: 1;
+            max-width: 900px;
+        }
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1a1a2e;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+            border: 1px solid #3a3f58;
+        }
+        .map-container {
+            position: relative;
+            display: inline-block;
+            cursor: crosshair;
+        }
+        .map-container img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            border: 2px solid #4a4e69;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        .visual-box {
+            position: absolute;
+            pointer-events: none;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .box-green {
+            border: 3px solid rgba(81, 207, 102, 0.9);
+            background-color: rgba(81, 207, 102, 0.35);
+            animation: fadeOut 1.5s forwards;
+        }
+        .box-red-point {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: rgba(255, 107, 107, 0.9);
+            border: 2px solid white;
+            border-radius: 50%;
+            transform: translate(-10px, -10px);
+            pointer-events: none;
+            z-index: 5;
+            box-shadow: 0 0 8px rgba(255, 107, 107, 0.8);
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        #feedback {
+            margin-top: 12px;
+            font-weight: bold;
+            font-size: 1.15em;
+        }
+        .btn {
+            background: linear-gradient(135deg, #00b4d8, #0077b6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            margin-top: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: transform 0.1s, background 0.2s;
+        }
+        .btn:hover {
+            background: linear-gradient(135deg, #90e0ef, #00b4d8);
+            transform: translateY(-2px);
+        }
+        .btn:disabled {
+            background: #3a3f58;
+            color: #7c859e;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #c92a2a);
+        }
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #ff8787, #e03131);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Menü Button mit Reset-Symbol und Menü-Symbol kombiniert -->
+    <div class="menu-btn" onclick="toggleMenu()" title="Menü & Anleitung (ESC)">
+        <svg style="width: 22px; height: 22px; fill: white;" viewBox="0 0 24 24">
+            <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+        </svg>
+    </div>
+
+    <!-- Modal für Menü, Anleitung, Notensystem Sachsen & Highscores -->
+    <div class="modal" id="stats-modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="toggleMenu()">×</button>
+            <h2 style="margin-top: 0; color: #00f2fe;">🗺️ Amerika Quiz Menü</h2>
+            
+            <!-- Spielanleitung -->
+            <div class="menu-section">
+                <h4>📜 Spielanleitung & Steuerung</h4>
+                <p>Finde und markiere die gesuchten Orte auf der Karte. Bestätige mit <span class="key-badge">Enter</span> oder dem Button.</p>
+                <p style="margin-top: 6px;">Drücke <span class="key-badge">ESC</span> für dieses Menü und im Menü <span class="key-badge">R</span> zum Neustarten.</p>
+            </div>
+
+            <!-- Notensystem Sachsen (Schulnoten-Prozent-Tabelle) -->
+            <div class="menu-section">
+                <h4>📊 Notensystem (Sachsen Standard)</h4>
+                <p style="margin-bottom: 8px;">Klassischer linearer Notenschlüssel (50%-Grenze für Note 4):</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Note</th>
+                            <th>Prozentbereich</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>1 (Sehr gut)</strong></td><td>96% – 100%</td></tr>
+                        <tr><td><strong>2 (Gut)</strong></td><td>80% – 95%</td></tr>
+                        <tr><td><strong>3 (Befriedigend)</strong></td><td>65% – 79%</td></tr>
+                        <tr><td><strong>4 (Ausreichend)</strong></td><td>50% – 64%</td></tr>
+                        <tr><td><strong>5 (Mangelhaft)</strong></td><td>20% – 49%</td></tr>
+                        <tr><td><strong>6 (Ungenügend)</strong></td><td>0% – 19%</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Highscores -->
+            <h3 style="margin-top: 25px; color: #00f2fe;">🏆 Overall Highscores</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rang</th>
+                        <th>Punkte</th>
+                        <th>Datum</th>
+                    </tr>
+                </thead>
+                <tbody id="highscore-table-body"></tbody>
+            </table>
+
+            <!-- Reset Button in den Settings -->
+            <div style="margin-top: 25px;">
+                <button class="btn btn-danger" onclick="startGame()">🔄 Run zurücksetzen (Neu starten)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal für den End-Screen -->
+    <div class="modal" id="end-screen-modal">
+        <div class="modal-content" style="width: 600px;">
+            <h2 style="color: #00f2fe;">🎉 Quiz Beendet!</h2>
+            <p id="end-score-text" style="font-size: 1.2em; font-weight: bold;"></p>
+            <hr style="border-color: #3a3f58;">
+            <h3 style="color: #00f2fe;">Deine Auswertung:</h3>
+            <div style="max-height: 250px; overflow-y: auto; text-align: left;">
+                <table id="end-summary-table">
+                    <thead>
+                        <tr>
+                            <th>Begriff</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="end-summary-body"></tbody>
+                </table>
+            </div>
+            <button class="btn" onclick="startGame()">Nochmal spielen</button>
+        </div>
+    </div>
+
+<div class="main-layout">
+    <!-- Linke Sidebar -->
+    <div class="sidebar">
+        <h3>Falsch</h3>
+        <ul id="wrong-list"></ul>
+    </div>
+
+    <!-- Hauptbereich -->
+    <div class="quiz-container">
+        <div class="header-bar">
+            <div id="target-display">Gesucht: -</div>
+            <div id="score-display">Punkte: 0 | Streak: 0</div>
+            <div id="progress-display">Fortschritt: 0/0</div>
+        </div>
+        
+        <div class="map-container" id="map-container">
+            <img id="map-image" src="" alt="Stumme Karte" onclick="handleMapClick(event)">
+        </div>
+        
+        <div id="feedback"></div>
+        <button id="confirm-btn" class="btn" onclick="confirmGuess()" disabled>Tipp bestätigen</button>
+    </div>
+
+    <!-- Rechte Sidebar -->
+    <div class="sidebar">
+        <h3>Richtig</h3>
+        <ul id="correct-list"></ul>
+    </div>
+</div>
+
+<script>
+    const allLocations = [
+        { id: 58, name: "Hochland von Mexico", map: "nordamerika.jpg", box: { x1: 33.3, x2: 51.3, y1: 64.9, y2: 82.9 }, tip: "Zentrales Hochgebiet im Inneren von Mexiko." },
+        { id: 59, name: "Große Antillen", map: "nordamerika.jpg", box: { x1: 71.3, x2: 97.3, y1: 67.5, y2: 85.7 }, tip: "Inselgruppe in der Karibik." },
+        { id: 60, name: "St.-Lorenz-Strom", map: "nordamerika.jpg", box: { x1: 66.3, x2: 84.3, y1: 41.3, y2: 59.3 }, tip: "Wasserstraße, die die Großen Seen verbindet." },
+        { id: 61, name: "Missouri", map: "nordamerika.jpg", box: { x1: 41.6, x2: 59.6, y1: 48.0, y2: 66.0 }, tip: "Längster Nebenfluss des Mississippi." },
+        { id: 62, name: "Pampa", map: "suedamerika.jpg", box: { x1: 36.6, x2: 54.6, y1: 62.3, y2: 80.3 }, tip: "Fruchtbare Graslandschaft im Süden." },
+        { id: 63, name: "Feuerland", map: "suedamerika.jpg", box: { x1: 28.8, x2: 46.8, y1: 81.6, y2: 99.6 }, tip: "Inselgruppe an der Südspitze." },
+        { id: 64, name: "Paraguay", map: "suedamerika.jpg", box: { x1: 40.8, x2: 58.8, y1: 44.1, y2: 62.1 }, tip: "Fluss und Binnenstaat." },
+        { 
+            id: 65, name: "Brasilien", map: "suedamerika.jpg", 
+            boxes: [
+                { x1: 32.0, x2: 52.0, y1: 22.0, y2: 42.0 }, 
+                { x1: 50.0, x2: 70.0, y1: 32.0, y2: 52.0 }, 
+                { x1: 58.0, x2: 82.0, y1: 42.0, y2: 65.0 }, 
+                { x1: 70.0, x2: 90.0, y1: 28.0, y2: 50.0 }, 
+                { x1: 52.0, x2: 74.0, y1: 22.0, y2: 44.0 }
+            ], 
+            tip: "Größtes Land Südamerikas." 
+        },
+        { id: 66, name: "Bergland von Guyana", map: "suedamerika.jpg", box: { x1: 36.1, x2: 54.1, y1: 7.7, y2: 25.7 }, tip: "Gebirgsregion im Norden." },
+        { id: 67, name: "Mexico", map: "nordamerika.jpg", box: { x1: 40.4, x2: 57.8, y1: 72.8, y2: 85.7 }, tip: "Staat südlich der USA." },
+        { id: 68, name: "Colorado", map: "nordamerika.jpg", boxes: [{ x1: 26.3, x2: 35.3, y1: 64.0, y2: 73.0 }, { x1: 32.2, x2: 41.2, y1: 59.7, y2: 68.7 }, { x1: 35.8, x2: 44.8, y1: 57.1, y2: 66.1 }], tip: "Wichtiger Fluss im Südwesten." },
+        { id: 69, name: "Rio Grande", map: "nordamerika.jpg", box: { x1: 38.4, x2: 56.4, y1: 63.1, y2: 81.1 }, tip: "Grenzfluss zu Mexiko." },
+        { id: 70, name: "Amazonastiefland", map: "suedamerika.jpg", boxes: [{ x1: 53.1, x2: 66.5, y1: 42.8, y2: 56.2 }, { x1: 66.6, x2: 80.0, y1: 36.8, y2: 50.2 }, { x1: 60.0, x2: 73.4, y1: 38.8, y2: 52.2 }], tip: "Großes Tiefland im Norden." },
+        { id: 71, name: "Michigansee", map: "nordamerika.jpg", box: { x1: 52.4, x2: 70.4, y1: 45.9, y2: 63.9 }, tip: "Großer See komplett in den USA." },
+        { id: 72, name: "Baffinland", map: "nordamerika.jpg", box: { x1: 56.9, x2: 74.9, y1: 23.1, y2: 41.1 }, tip: "Große Insel im Norden Kanadas." },
+        { id: 73, name: "Chile", map: "suedamerika.jpg", box: { x1: 22.3, x2: 40.3, y1: 58.1, y2: 76.1 }, tip: "Langgestrecktes Land an der Küste." },
+        { id: 75, name: "Peru", map: "suedamerika.jpg", box: { x1: 14.1, x2: 27.8, y1: 26.8, y2: 42.7 }, tip: "Staat am Pazifik." },
+        { id: 76, name: "Rocky Mountains", map: "nordamerika.jpg", boxes: [{ x1: 34.8, x2: 44.8, y1: 55.7, y2: 65.7 }, { x1: 31.3, x2: 41.3, y1: 48.2, y2: 58.2 }, { x1: 26.9, x2: 36.9, y1: 41.5, y2: 51.5 }, { x1: 25.3, x2: 35.3, y1: 33.7, y2: 43.7 }], tip: "Faltengebirge im Westen." },
+        { id: 77, name: "Sierra Nevada", map: "nordamerika.jpg", box: { x1: 16.1, x2: 34.1, y1: 52.2, y2: 70.2 }, tip: "Hochgebirge in Kalifornien." },
+        { id: 78, name: "Appalachen", map: "nordamerika.jpg", box: { x1: 63.5, x2: 81.5, y1: 48.4, y2: 66.4 }, tip: "Bewaldetes Gebirge im Osten." },
+        { 
+            id: 79, name: "Amazonas", map: "suedamerika.jpg", 
+            boxes: [
+                { x1: 48.0, x2: 68.0, y1: 19.0, y2: 35.0 }, 
+                { x1: 30.0, x2: 53.0, y1: 21.0, y2: 38.0 }, 
+                { x1: 18.0, x2: 41.0, y1: 19.0, y2: 37.0 }, 
+                { x1: 10.0, x2: 31.0, y1: 26.0, y2: 45.0 }
+            ], 
+            tip: "Wasserreichster Fluss der Erde." 
+        },
+        { id: 80, name: "Oberer See", map: "nordamerika.jpg", box: { x1: 53.5, x2: 71.5, y1: 44.1, y2: 62.1 }, tip: "Größter der Fünf Großen Seen." },
+        { id: 81, name: "Aleuten", map: "nordamerika.jpg", box: { x1: 0.0, x2: 15.6, y1: 20.8, y2: 38.8 }, tip: "Inselkette im Nordpazifik." },
+        { 
+            id: 82, name: "Anden", map: "suedamerika.jpg", 
+            boxes: [
+                { x1: 22.6, x2: 35.6, y1: 46.1, y2: 58.1 },
+                { x1: 24.0, x2: 38.0, y1: 51.0, y2: 63.0 },
+                { x1: 25.0, x2: 40.6, y1: 56.0, y2: 68.1 }
+            ], 
+            tip: "Längstes Gebirgssystem." 
+        },
+        { id: 83, name: "Karibik", map: "nordamerika.jpg", box: { x1: 67.6, x2: 97.6, y1: 66.8, y2: 85.6 }, tip: "Tropisches Meer." },
+        { id: 84, name: "Ontariosee", map: "nordamerika.jpg", box: { x1: 62.5, x2: 80.5, y1: 44.7, y2: 62.7 }, tip: "Östlichster der Großen Seen." },
+        { id: 85, name: "Río de la Plata", map: "suedamerika.jpg", box: { x1: 49.4, x2: 59.4, y1: 65.0, y2: 75.0 }, tip: "Mündungstrichter." },
+        { id: 86, name: "Paraná", map: "suedamerika.jpg", boxes: [{ x1: 43.4, x2: 52.4, y1: 61.3, y2: 70.3 }, { x1: 46.9, x2: 55.9, y1: 55.1, y2: 64.1 }, { x1: 54.0, x2: 63.0, y1: 50.0, y2: 59.0 }], tip: "Zweitlängster Fluss." },
+        { id: 87, name: "Bolivien", map: "suedamerika.jpg", box: { x1: 25.1, x2: 43.1, y1: 35.2, y2: 53.2 }, tip: "Binnenstaat." },
+        { id: 88, name: "Kanadischer Schild", map: "nordamerika.jpg", box: { x1: 46.9, x2: 64.9, y1: 35.1, y2: 53.1 }, tip: "Geologische Schildregion." },
+        { id: 89, name: "Florida", map: "nordamerika.jpg", box: { x1: 63.6, x2: 81.6, y1: 60.8, y2: 78.8 }, tip: "Südöstliche Halbinsel." },
+        { id: 90, name: "Labrador", map: "nordamerika.jpg", box: { x1: 71.0, x2: 89.0, y1: 30.5, y2: 48.5 }, tip: "Halbinsel im Osten Kanadas." },
+        { id: 91, name: "Kuba", map: "nordamerika.jpg", box: { x1: 69.0, x2: 87.0, y1: 67.1, y2: 85.1 }, tip: "Größter Inselstaat." },
+        { id: 92, name: "Atacamawüste", map: "suedamerika.jpg", box: { x1: 23.0, x2: 41.0, y1: 44.2, y2: 62.2 }, tip: "Extrem trockene Wüste." },
+        { id: 93, name: "Kolumbien", map: "suedamerika.jpg", box: { x1: 13.6, x2: 31.6, y1: 10.5, y2: 28.5 }, tip: "Staat im Nordwesten." },
+        { id: 94, name: "Aconcagua", map: "suedamerika.jpg", box: { x1: 23.4, x2: 41.4, y1: 50.3, y2: 68.3 }, tip: "Höchster Berg der Anden." },
+        { id: 95, name: "Niagarafälle", map: "nordamerika.jpg", box: { x1: 61.0, x2: 79.0, y1: 45.6, y2: 63.6 }, tip: "Berühmte Wasserfälle." },
+        { id: 96, name: "Golfküstenebene", map: "nordamerika.jpg", boxes: [{ x1: 68.9, x2: 78.9, y1: 67.0, y2: 77.0 }, { x1: 66.6, x2: 76.6, y1: 62.1, y2: 72.1 }, { x1: 71.2, x2: 81.2, y1: 56.2, y2: 66.2 }], tip: "Flache Küstenregion am Golf von Mexiko." },
+        { id: 97, name: "Atacamagraben", map: "suedamerika.jpg", box: { x1: 12.0, x2: 30.0, y1: 43.2, y2: 61.2 }, tip: "Tiefseerinne." },
+        { id: 98, name: "Venezuela", map: "suedamerika.jpg", box: { x1: 28.8, x2: 42.1, y1: 10.2, y2: 18.7 }, tip: "Staat an der Nordküste." },
+        { id: 99, name: "Argentinien", map: "suedamerika.jpg", box: { x1: 41.7, x2: 59.7, y1: 58.6, y2: 76.6 }, tip: "Zweitgrößter Staat." },
+        { id: 100, name: "Bergland von Guyana", map: "suedamerika.jpg", box: { x1: 35.9, x2: 53.9, y1: 8.1, y2: 26.1 }, tip: "Gebirgsregion im Norden." },
+        { id: 101, name: "Patagonien", map: "suedamerika.jpg", box: { x1: 27.3, x2: 45.3, y1: 70.5, y2: 88.5 }, tip: "Region im Süden." },
+        { id: 102, name: "Mackenzie", map: "nordamerika.jpg", boxes: [{ x1: 28.2, x2: 37.2, y1: 27.1, y2: 36.1 }, { x1: 32.1, x2: 41.1, y1: 33.5, y2: 42.5 }, { x1: 36.3, x2: 45.3, y1: 33.6, y2: 42.6 }], tip: "Längster Fluss Kanadas." },
+        { id: 103, name: "Denali", map: "nordamerika.jpg", box: { x1: 7.4, x2: 25.4, y1: 18.4, y2: 36.4 }, tip: "Höchster Berg Nordamerikas." },
+        { id: 104, name: "St.-Andreas-Linie", map: "nordamerika.jpg", box: { x1: 13.3, x2: 31.3, y1: 49.7, y2: 67.7 }, tip: "Tektonische Verwerfung." }
+    ];
+
+    let locations = [];
+    let currentIndex = 0;
+    let isLocked = false;
+    let score = 0;
+    let streak = 0;
+    let gameHistory = [];
+    let currentGuess = null;
+
+    document.addEventListener('keydown', function(event) {
+        const modal = document.getElementById("stats-modal");
+        
+        // ESC öffnet/schließt das Menü
+        if (event.key === 'Escape') {
+            toggleMenu();
+            return;
+        }
+
+        // Wenn das Menü offen ist und 'r' oder 'R' gedrückt wird -> Run neu starten
+        if (modal.style.display === "flex" && (event.key === 'r' || event.key === 'R')) {
+            startGame();
+            return;
+        }
+
+        if (event.key === 'Enter' || event.key === ' ') {
+            const confirmBtn = document.getElementById("confirm-btn");
+            if (!confirmBtn.disabled && modal.style.display !== "flex") {
+                if (event.key === ' ') {
+                    event.preventDefault();
+                }
+                confirmGuess();
+            }
+        }
+    });
+
+    function playSound(isCorrect) {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const now = audioCtx.currentTime;
+
+            if (isCorrect) {
+                [523.25, 659.25, 783.99].forEach((freq, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + i * 0.08);
+                    
+                    gain.gain.setValueAtTime(0.12, now + i * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.25);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start(now + i * 0.08);
+                    osc.stop(now + i * 0.08 + 0.25);
+                });
+            } else {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                
+                osc.frequency.setValueAtTime(140, now);
+                osc.frequency.linearRampToValueAtTime(80, now + 0.25);
+                
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+        } catch (e) {
+            console.log("Audio konnte nicht abgespielt werden", e);
+        }
+    }
+
+    function startGame() {
+        document.getElementById("end-screen-modal").style.display = "none";
+        document.getElementById("stats-modal").style.display = "none";
+
+        let shuffled = [...allLocations].sort(() => 0.5 - Math.random());
+        locations = shuffled.slice(0, Math.min(40, shuffled.length));
+
+        currentIndex = 0;
+        isLocked = false;
+        score = 0;
+        streak = 0;
+        gameHistory = [];
+        currentGuess = null;
+        document.getElementById("wrong-list").innerHTML = "";
+        document.getElementById("correct-list").innerHTML = "";
+        document.getElementById("confirm-btn").disabled = true;
+        updateHeader();
+        loadCurrentLocation();
+    }
+
+    function updateHeader() {
+        document.getElementById("score-display").innerText = `Punkte: ${score} | Streak: ${streak}`;
+        document.getElementById("progress-display").innerText = `Fortschritt: ${currentIndex}/${locations.length}`;
+    }
+
+    function loadCurrentLocation() {
+        if (currentIndex >= locations.length) {
+            endGame();
+            return;
+        }
+        
+        isLocked = false;
+        currentGuess = null;
+        document.getElementById("confirm-btn").disabled = true;
+
+        const existingPoint = document.getElementById("guess-point");
+        if (existingPoint) existingPoint.remove();
+
+        const currentLoc = locations[currentIndex];
+        document.getElementById("target-display").innerText = `Gesucht: ${currentLoc.name}`;
+        updateHeader();
+        document.getElementById("map-image").src = currentLoc.map;
+        document.getElementById("feedback").innerText = currentLoc.tip ? `Tipp: ${currentLoc.tip}` : "";
+        document.getElementById("feedback").style.color = "#a5b4fc";
+    }
+
+    function handleMapClick(event) {
+        if (isLocked || currentIndex >= locations.length) return;
+
+        const img = event.target;
+        const rect = img.getBoundingClientRect();
+        
+        const x = ((event.clientX - rect.left) / img.clientWidth) * 100;
+        const y = ((event.clientY - rect.top) / img.clientHeight) * 100;
+
+        currentGuess = { x: x, y: y };
+
+        const existingPoint = document.getElementById("guess-point");
+        if (existingPoint) existingPoint.remove();
+
+        const container = document.getElementById("map-container");
+        const point = document.createElement("div");
+        point.id = "guess-point";
+        point.classList.add("box-red-point");
+        point.style.left = x + "%";
+        point.style.top = y + "%";
+        container.appendChild(point);
+
+        document.getElementById("confirm-btn").disabled = false;
+    }
+
+    function confirmGuess() {
+        if (!currentGuess || isLocked) return;
+        isLocked = true;
+        document.getElementById("confirm-btn").disabled = true;
+
+        const currentLoc = locations[currentIndex];
+        const hitResult = getHitBox(currentGuess.x, currentGuess.y, currentLoc, currentLoc.map);
+
+        if (hitResult.isHit) {
+            playSound(true);
+            streak++;
+            let earnedPoints = 100 + (streak - 1) * 20;
+            score += earnedPoints;
+
+            document.getElementById("feedback").innerText = `Richtig! (+${earnedPoints} Pkt)`;
+            document.getElementById("feedback").style.color = "#51cf66";
+            
+            showVisualBox(hitResult.box.x1, hitResult.box.x2, hitResult.box.y1, hitResult.box.y2, true);
+            addToList("correct-list", currentLoc.name);
+            gameHistory.push({ name: currentLoc.name, status: "Richtig" });
+        } else {
+            playSound(false);
+            streak = 0;
+
+            document.getElementById("feedback").innerText = "Falsch! Das war die falsche Stelle.";
+            document.getElementById("feedback").style.color = "#ff6b6b";
+            
+            addToList("wrong-list", currentLoc.name);
+            highlightCorrectBoxes(currentLoc);
+            gameHistory.push({ name: currentLoc.name, status: "Falsch" });
+        }
+
+        currentIndex++;
+        updateHeader();
+        setTimeout(loadCurrentLocation, 1800);
+    }
+
+    function showVisualBox(x1, x2, y1, y2, isCorrect) {
+        const container = document.getElementById("map-container");
+        const box = document.createElement("div");
+        box.classList.add("visual-box");
+
+        if (isCorrect) {
+            box.classList.add("box-green");
+            box.style.left = x1 + "%";
+            box.style.top = y1 + "%";
+            box.style.width = (x2 - x1) + "%";
+            box.style.height = (y2 - y1) + "%";
+        }
+
+        container.appendChild(box);
+        setTimeout(() => box.remove(), 1500);
+    }
+
+    function highlightCorrectBoxes(targetLocation) {
+        if (targetLocation.boxes) {
+            for (let box of targetLocation.boxes) {
+                showVisualBox(box.x1, box.x2, box.y1, box.y2, true);
+            }
+        } else if (targetLocation.box) {
+            const box = targetLocation.box;
+            showVisualBox(box.x1, box.x2, box.y1, box.y2, true);
+        }
+    }
+
+    function getHitBox(clickX, clickY, targetLocation, currentMap) {
+        if (targetLocation.map !== currentMap) return { isHit: false };
+
+        if (targetLocation.boxes) {
+            for (let box of targetLocation.boxes) {
+                if (clickX >= box.x1 && clickX <= box.x2 && clickY >= box.y1 && clickY <= box.y2) {
+                    return { isHit: true, box: box };
+                }
+            }
+        }
+
+        if (targetLocation.box) {
+            const box = targetLocation.box;
+            if (clickX >= box.x1 && clickX <= box.x2 && clickY >= box.y1 && clickY <= box.y2) {
+                return { isHit: true, box: box };
+            }
+        }
+
+        return { isHit: false };
+    }
+
+    function addToList(listId, name) {
+        const list = document.getElementById(listId);
+        for (let item of list.children) {
+            if (item.innerText === name) return;
+        }
+        const li = document.createElement("li");
+        li.innerText = name;
+        list.appendChild(li);
+    }
+
+    function endGame() {
+        saveHighscore(score);
+
+        document.getElementById("end-score-text").innerText = `Du hast insgesamt ${score} Punkte erreicht!`;
+        
+        const summaryBody = document.getElementById("end-summary-body");
+        summaryBody.innerHTML = "";
+        gameHistory.forEach(item => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${item.name}</td>
+                <td style="color: ${item.status === 'Richtig' ? '#51cf66' : '#ff6b6b'}; font-weight: bold;">${item.status}</td>
+            `;
+            summaryBody.appendChild(tr);
+        });
+
+        document.getElementById("end-screen-modal").style.display = "flex";
+    }
+
+    function saveHighscore(currentScore) {
+        let highscores = JSON.parse(localStorage.getItem("quiz_highscores")) || [];
+        const dateStr = new Date().toLocaleDateString("de-DE") + " " + new Date().toLocaleTimeString("de-DE", {hour: '2-digit', minute:'2-digit'});
+        
+        highscores.push({ points: currentScore, date: dateStr });
+        highscores.sort((a, b) => b.points - a.points);
+        highscores = highscores.slice(0, 10);
+
+        localStorage.setItem("quiz_highscores", JSON.stringify(highscores));
+    }
+
+    function toggleMenu() {
+        const modal = document.getElementById("stats-modal");
+        if (modal.style.display === "flex") {
+            modal.style.display = "none";
+        } else {
+            updateHighscoreTable();
+            modal.style.display = "flex";
+        }
+    }
+
+    function updateHighscoreTable() {
+        const tbody = document.getElementById("highscore-table-body");
+        tbody.innerHTML = "";
+        let highscores = JSON.parse(localStorage.getItem("quiz_highscores")) || [];
+
+        if (highscores.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3">Noch keine Runs gespeichert!</td></tr>`;
+            return;
+        }
+
+        highscores.forEach((entry, index) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><strong>#${index + 1}</strong></td>
+                <td>${entry.points} Punkte</td>
+                <td>${entry.date}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    window.onload = startGame;
+</script>
+
+</body>
+</html>
